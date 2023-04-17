@@ -1,23 +1,33 @@
-from http import HTTPStatus
-from django.test import Client, TestCase
+name: Django-app workflow
 
+on: [push]
 
-class StaticPagesURLTests(TestCase):
-    def setUp(self):
-        self.guest_client = Client()
+jobs:
+  tests:
+    runs-on: ubuntu-latest
 
-    def test_about_url_exists_at_desired_location(self):
-        """Проверка доступности страниц."""
-        response = self.guest_client.get('/')
-        self.assertEqual(response.status_code, HTTPStatus.OK)
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
 
-        response = self.guest_client.get('/second_page/')
-        self.assertEqual(response.status_code, HTTPStatus.OK)
+    - name: Install dependencies
+      run: |
+        # обновление pip
+        python -m pip install --upgrade pip
+        # установка flake8 и его плагинов
+        pip install flake8 pep8-naming flake8-broken-line flake8-return flake8-isort
+        # установка зависимостей
+        pip install -r requirements.txt
 
-    def test_page_shows_correct_content(self):
-        """Проверка контента страниц."""
-        response = self.guest_client.get('/')
-        self.assertContains(response, 'У меня получилось!')
-
-        response = self.guest_client.get('/second_page/')
-        self.assertContains(response, 'А это вторая страница!')
+    - name: Test with flake8 and django tests
+      run: |
+        # запуск проверки проекта по flake8
+        python -m flake8
+        # перейти в папку, содержащую manage.py —
+        #<корневая_папка_infra_actions>/<папка_проекта>/manage.py
+        cd infra_project/
+        # запустить написанные разработчиком тесты
+        python manage.py test
